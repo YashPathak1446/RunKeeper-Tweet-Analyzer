@@ -20,7 +20,6 @@ function parseTweets(runkeeper_tweets) {
 		day: 'numeric',
 	};
 
-	// Part 1.1
 	// Calculate earliest and latest dates amongst all tweets
 	// Map the time of the tweets corresponding to every tweet in the tweet array
 	const dates = tweet_array.map(tweet => tweet.time);
@@ -29,11 +28,11 @@ function parseTweets(runkeeper_tweets) {
 	const latest_date = new Date(Math.max(...dates));
 
 	// Replace the hardcoded values inside the html id and use the tolocalDateString to format it better
-	document.getElementById('firstDate').innerText = earliest_date.toLocaleDateString("en-US", options);
-	document.getElementById('lastDate').innerText = latest_date.toLocaleDateString("en-US", options);
+	document.getElementById('firstDate').innerText = earliest_date.toLocaleDateString(undefined, options);
+	document.getElementById('lastDate').innerText = latest_date.toLocaleDateString(undefined, options);
 
 
-	// Part 1.2
+
 	// First create a object to map tweets with the categories:
 	const tweet_categories = {
 		completed_event: 0,
@@ -93,6 +92,22 @@ function parseTweets(runkeeper_tweets) {
 	document.querySelector('.achievementsPct').innerText = math.format((tweet_categories.achievement / total_tweets * 100), 2) + "%";
 	// Set the value for percentage of miscellaneous
 	document.querySelector('.miscellaneousPct').innerText = math.format((tweet_categories.miscellaneous / total_tweets * 100), 2) + "%";
+
+
+	// Calculate total number of written tweets
+	let written_tweets = 0;
+
+	// Loop through array and call associated function to determine written tweets
+	tweet_array.forEach(tweet => {
+		if (tweet.written) {
+			written_tweets++;
+		}
+	});
+
+	// Display the results
+	document.querySelector('.written').innerText = written_tweets;
+
+	document.querySelector('.writtenPct').innerText = math.format((written_tweets / total_tweets * 100), 4) + "%";
 
 }
 

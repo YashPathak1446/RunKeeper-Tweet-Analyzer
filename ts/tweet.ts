@@ -7,10 +7,8 @@ class Tweet {
         this.time = new Date(tweet_time);//, "ddd MMM D HH:mm:ss Z YYYY"
     }
 
-    //returns either 'live_event', 'achievement', 'completed_event', or 'miscellaneous'
+    // returns either 'live_event', 'achievement', 'completed_event', or 'miscellaneous'
     get source(): string {
-        //TODO: identify whether the source is a live event, an achievement, a completed event, or miscellaneous.
-
         // starts with "Just completed" OR "Just posted" -> 'completed_event' (95% +- 5%)
         if (this.text.startsWith("Just completed") || this.text.startsWith("Just posted")) {
             return "completed_event";
@@ -30,18 +28,28 @@ class Tweet {
 
     }
 
-    //returns a boolean, whether the text includes any content written by the person tweeting.
+    // returns a boolean, whether the text includes any content written by the person tweeting.
     get written(): boolean {
-        //TODO: identify whether the tweet is written
-        return false;
+        // Check if the tweet ends with the string "Check it out!"
+        // If so, it is not written
+        if (this.writtenText.endsWith("Check it out!")) {
+            return false;
+        }
+        // Otherwise, it's written by a user.
+        return true;
     }
 
     get writtenText(): string {
-        if (!this.written) {
-            return "";
-        }
-        //TODO: parse the written text from the tweet
-        return "";
+        // First strip the #RunKeeper at the end, as well as the link that starts with https://
+        const index = this.text.indexOf("https://");
+        // create new string that removes the hashtag and hyperlink
+        const new_string = this.text.substring(0, index);
+
+        // Next, check strip the additional whitespace on the right:
+        const tweet_text = new_string.trim()
+
+        // return the tweet
+        return tweet_text;
     }
 
     get activityType(): string {
