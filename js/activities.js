@@ -9,8 +9,6 @@ function parseTweets(runkeeper_tweets) {
 		return new Tweet(tweet.text, tweet.created_at);
 	});
 
-	// create a map to store the values of the the tweet as key
-
 
 	// Create another map to count the total number of activities
 	let activity_dict = {};
@@ -153,17 +151,91 @@ function parseTweets(runkeeper_tweets) {
 		"$schema": "https://vega.github.io/schema/vega-lite/v5.json",
 		"description": "A graph of the number of Tweets containing each type of activity.",
 		"data": {
-			"values": tweet_array
-		}
+			"values": Object.entries(activity_dict).map(([activity, count]) => ({ activity, count }))
+		},
 		//TODO: Add mark and encoding
+		"mark": "bar",
+		"encoding": {
+			"x": { "field": "activity", "type": "ordinal", "title": "Activity Type" },
+			"y": { "field": "count", "type": "quantitative", "title": "Number of Tweets" },
+			"color": { "field": "activity", "type": "nominal", "legend": null }
+		}
 	};
 	vegaEmbed('#activityVis', activity_vis_spec, { actions: false });
 
 	//TODO: create the visualizations which group the three most-tweeted activities by the day of the week.
 	//Use those visualizations to answer the questions about which activities tended to be longest and when.
+
+	let distance_data = tweet_array
+		.filter(tweet => [top1_activity, top2_activity, top3_activity].includes(tweet.activityType))
+		.map(tweet => ({
+			day: tweet.time.toLocaleString('en-us', { weekday: 'long' }),
+			distance: tweet.distance,
+			activity: tweet.activityType
+		}));
+
+	let distance_vis_spec = {
+		"$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+		"description": "Distances of top 3 activities by day of the week",
+		"data": { "values": distance_data },
+		"mark": "point",
+		"encoding": {
+			"x": { "field": "day", "type": "ordinal", "title": "Day of the Week", "sort": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+			"y": { "field": "distance", "type": "quantitative", "title": "Distance (miles)" },
+			"color": { "field": "activity", "type": "nominal", "title": "Activity Type" }
+		}
+	};
+	vegaEmbed('#distanceVis', distance_vis_spec, { actions: false });
+
+	let aggregated_distance_data = Object.values(distance_data.reduce((acc, { day, distance, activity }) => {
+		if (!acc[`${day}-${activity}`]) {
+			acc[`${day}-${activity}`] = { day, activity, totalDistance: 0, count: 0 };
+		}
+		acc[`${day}-${activity}`].totalDistance += distance;
+		acc[`${day}-${activity}`].count += 1;
+		return acc;
+	}, {})).map(({ day, activity, totalDistance, count }) => ({
+		day, activity, distance: totalDistance / count
+	}));
+
+	let aggregated_distance_vis_spec = {
+		"$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+		"description": "Mean distances of top 3 activities by day of the week",
+		"data": { "values": aggregated_distance_data },
+		"mark": "point",
+		"encoding": {
+			"x": { "field": "day", "type": "ordinal", "title": "Day of the Week", "sort": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+			"y": { "field": "distance", "type": "quantitative", "title": "Mean Distance (miles)" },
+			"color": { "field": "activity", "type": "nominal", "title": "Activity Type" }
+		}
+	};
+
+	vegaEmbed("#distanceVisAggregated", aggregated_distance_vis_spec, { actions: false });
+
+
+
 }
 
 //Wait for the DOM to load
 document.addEventListener('DOMContentLoaded', function (event) {
 	loadSavedRunkeeperTweets().then(parseTweets);
+
+	// Initially hide the aggregated visualization
+	document.getElementById("distanceVisAggregated").style.display = "none";
+
+	// Add event listener to toggle between the two visualizations
+	document.getElementById("aggregate").addEventListener("click", function () {
+		let distanceVis = document.getElementById("distanceVis");
+		let distanceVisAggregated = document.getElementById("distanceVisAggregated");
+
+		if (distanceVis.style.display === "none") {
+			distanceVis.style.display = "block";
+			distanceVisAggregated.style.display = "none";
+			this.innerText = "Show means"; // Update button text
+		} else {
+			distanceVis.style.display = "none";
+			distanceVisAggregated.style.display = "block";
+			this.innerText = "Show raw data"; // Update button text
+		}
+	});
 });
